@@ -7,6 +7,9 @@ using static WebApplication1.Helper.AutentifikacijaAutorizacija.MyAuthTokenExten
 using WebApplication1.Modul_Autentifikacija.ViewModels;
 using WebApplication1.Helper;
 using WebApplication1.Helper.Service;
+using Microsoft.AspNetCore.SignalR;
+using WebApplication1.SignalR;
+using System.Threading;
 
 namespace FIT_Api_Examples.Modul0_Autentifikacija.Controllers
 {
@@ -17,21 +20,22 @@ namespace FIT_Api_Examples.Modul0_Autentifikacija.Controllers
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly MyEmailSenderService _myEmailSenderService;
+        private readonly IHubContext<SignalRHub> _hubContext;
 
-        public AutentifikacijaController(ApplicationDbContext dbContext, MyEmailSenderService myEmailSenderService)
+        public AutentifikacijaController(ApplicationDbContext dbContext, MyEmailSenderService myEmailSenderService, IHubContext<SignalRHub> hubContext)
         {
             this._dbContext = dbContext;
             _myEmailSenderService = myEmailSenderService;
-           
+           _hubContext = hubContext;
         }
 
 
         [HttpPost]
-        public ActionResult<LoginInformacije> Login([FromBody] LoginVM x)
+        public async Task<ActionResult<LoginInformacije>> Login([FromBody] LoginVM x, CancellationToken cancellationToken)
         {
             //1- provjera logina
-            KorisnickiNalog logiraniKorisnik = _dbContext.KorisnickiNalog
-                .FirstOrDefault(k =>
+            KorisnickiNalog logiraniKorisnik =await _dbContext.KorisnickiNalog
+                .FirstOrDefaultAsync(k =>
                 k.KorisnickoIme != null && k.KorisnickoIme == x.korisnickoIme && k.Lozinka == x.lozinka);
 
             if (logiraniKorisnik == null)
@@ -60,24 +64,34 @@ namespace FIT_Api_Examples.Modul0_Autentifikacija.Controllers
                 TwoFKey = twoFKey
             };
 
-            _dbContext.Add(noviToken);
-            _dbContext.SaveChanges();
+             _dbContext.Add(noviToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
+            await _hubContext.Groups.AddToGroupAsync(x.SignalRConnectionID,
+                 noviToken.KorisnickiNalog.KorisnickoIme,
+                 cancellationToken);
             //4- vratiti token string
             return new LoginInformacije(noviToken);
         }
-
+        public class LogOutRequest
+        {
+            public string SignalRConnectionID { get; set; }
+        }
         [HttpPost]
-        public ActionResult Logout()
+        public async Task<NoResponse> Logout([FromBody]  LogOutRequest x,CancellationToken cancellationToken)
         {
             AutentifikacijaToken autentifikacijaToken = HttpContext.GetAuthToken();
 
             if (autentifikacijaToken == null)
-                return Ok();
+                return new NoResponse();
+            await _hubContext.Groups.AddToGroupAsync(x.SignalRConnectionID,
+                 autentifikacijaToken.KorisnickiNalog.KorisnickoIme,
+                 cancellationToken);
 
             _dbContext.Remove(autentifikacijaToken);
-            _dbContext.SaveChanges();
-            return Ok();
+           await _dbContext.SaveChangesAsync();
+            return new NoResponse();
+
         }
 
         [HttpGet]

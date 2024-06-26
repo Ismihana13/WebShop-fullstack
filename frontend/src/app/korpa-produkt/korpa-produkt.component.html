@@ -1,47 +1,41 @@
-<div class="h-100" style="background-color: #eee;">
+<div class="korpa-produkt">
+<div class="h-100" style="background-color: #faf9f9;">
   <div class="container h-100 py-5">
     <div class="row d-flex justify-content-center align-items-center h-100">
       <div class="col-10">
 
-        <div class="d-flex justify-content-between align-items-center mb-4"style="margin-left: 500px;">
-          <h3 class="fw-normal mb-0 text-black" style="font-size: xxx-large;font-family:'Apple Color Emoji'">Košarica</h3>
-          <img src="assets/image/cartShopping.png" alt="Logo" height="50">
+        <div class="d-flex justify-content-center align-items-center mb-4">
+          <h3 class="fw-normal mb-0 text-black" style="font-size: 2.5rem; font-family: 'Apple Color Emoji'; display: inline-block;">Košarica</h3>
+          <img src="assets/image/cartShopping.png" alt="Logo" height="50" style="margin-left: 20px;">
         </div>
 
-        <div class="card rounded-3 mb-4" *ngFor="let item of korpaProdukti">
-          <div class="card-body p-4">
-            <div class="row d-flex justify-content-between align-items-center" >
-              <div class="col-md-2 col-lg-2 col-xl-2"  >
-                <img
-                  [src]="proizvodi[item.produktId]?.slika"
-                  class="img-thumbnail" alt="">
+
+        <ng-container *ngIf="korpaProdukti.length > 0; else praznaKorpa">
+          <div class="card rounded-3 mb-4" *ngFor="let item of korpaProdukti">
+            <div class="card-body p-4">
+              <div class="row d-flex justify-content-between align-items-center">
+                <div class="col-md-2 col-lg-2 col-xl-2">
+                  <img [src]="proizvodi[item.produktId]?.slika" class="img-thumbnail" alt="">
+                </div>
+                <div class="col-md-3 col-lg-3 col-xl-3">
+                  <p class="lead fw-normal mb-2">{{ proizvodi[item.produktId]?.naziv }}</p>
+                  <p><span class="text-muted">Opis: {{ proizvodi[item.produktId]?.opis }}</span></p>
+                </div>
+
+                <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
+                  <h5 class="mb-0">{{ proizvodi[item.produktId]?.cijena }}KM</h5>
+                </div>
+                <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
+                  <a (click)="deleteItem(item.korpaProduktId)" class="btn btn-light" style="outline: #8f7272 2px solid; width: 150px">
+                    <img src="assets/image/kosara.png" alt="Logo" height="50">
+                  </a>
+                </div>
+                <div class="col-md-1 col-lg-1 col-xl-1 text-end">
+                  <a href="#!" class="text-danger"><i class="fas fa-trash fa-lg"></i></a>
+                </div>
               </div>
-              <div class="col-md-3 col-lg-3 col-xl-3">
-                <p class="lead fw-normal mb-2">{{proizvodi[item.produktId]?.naziv}}, </p>
-                <p><span class="text-muted">Opis: {{proizvodi[item.produktId]?.opis}} </span></p>
-              </div>
-
-              <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
-                <h5 class="mb-0">{{proizvodi[item.produktId]?.cijena}}KM</h5>
-
-              </div>
-              <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
-                <!-- HTML -->
-                <!-- HTML -->
-                <a (click)="deleteItem(item.korpaProduktId)" class="btn btn-light"  style="outline: #8f7272 2px solid; width: 150px">
-                  <img src="assets/image/kosara.png" alt="Logo" height="50">
-                </a>
-
-
-              </div>
-              <div class="col-md-1 col-lg-1 col-xl-1 text-end">
-                <a href="#!" class="text-danger"><i class="fas fa-trash fa-lg"></i></a>
-
-              </div>
-
             </div>
           </div>
-        </div>
         <div class="card mb-5">
           <div class="card-body p-4">
             <div class="">
@@ -52,18 +46,22 @@
               <hr class="my-4">
               <a type="button" href="javascript:void(0);" (click)="goBack()" class="btn btn-light" style="outline: #212529 2px solid; width: 100px">Nazad</a>
               <button (click)="openModal()" type="button" class="btn btn-primary" style="margin-left:700px;outline: #212529 2px solid; width: 150px">Kupi</button>
-
             </div>
           </div>
-
         </div>
+        </ng-container>
 
-      </div>
-    </div>
-  </div>
+        <ng-template #praznaKorpa>
+          <div class="text-center">
+            <p class="lead">Trenutno nema proizvoda u korpi.</p>
+            <a routerLink="/" class="btn btn-secondary">Vratite se u prodavnicu</a>
+          </div>
+        </ng-template>
 </div>
-
-
+</div>
+</div>
+</div>
+</div>
 
 <div *ngIf="otvori" class="modal fade show" style="background-color: rgb(0,0,0,55);border-top: 100px" id="exampleModalLive" tabindex="-1" aria-labelledby="exampleModalLiveLabel" aria-modal="true" role="dialog" style="display: block;">
   <div class="modal-dialog">
@@ -93,8 +91,6 @@
         </ul>
           </div>
       </div>
-
-
       <div class="modal-footer">
         <button type="button" class="btn btn-light" (click)="otvori=false" style="outline: #212529 2px solid; " >Nazad</button>
         <button type="button" class="btn btn-primary" routerLink="/provjera-narudzbe" style="outline: #212529 2px solid; " >Dalje</button>
@@ -102,3 +98,4 @@
     </div>
 </div>
 </div>
+

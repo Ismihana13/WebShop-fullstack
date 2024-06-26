@@ -12,6 +12,7 @@
   margin-right: 30px;
   outline: 3px solid grey;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+  font-family: 'Apple Color Emoji';
 }
  .footer {
   display: none;

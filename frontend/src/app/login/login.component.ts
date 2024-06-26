@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {MojConfig} from "../moj-config";
-
 import {Router} from "@angular/router";
 import {Login} from "./login-vm";
 import {AutentifikacijaHelper} from "../helper/autentifikacija-helper";
 import {AuthService} from "../services/AuthService";
-
+import {SignalRService} from "../services/signalR.service";
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -24,23 +24,24 @@ export class LoginComponent implements OnInit {
   kljuc: any;
   korisnikId:any;
   active:any;
+
   constructor(private httpKlijent : HttpClient, private router : Router,private autentifikacijaHelper: AutentifikacijaHelper,
               private authService:AuthService) {
   }
 
   ngOnInit(): void {
-
   }
 
   posaljiPodatke() {
+    this.prijava.signalRConnectionID=SignalRService.ConnectionID;
+
     if (this.validiranoKorisnickoIme && this.validiranaLozinka) {
       this.httpKlijent.post(MojConfig.adresa_servera + '/Autentifikacija/Login', this.prijava)
         .subscribe((response: any) => {
             if (response.isLogiran) {
               response.isPermisijaGost = false;
-             AutentifikacijaHelper.setLoginInfo(response, this.zapamtiMe);
-             // @ts-ignore
-              porukaSuccess("Uspjesno ste se logirali");
+              AutentifikacijaHelper.setLoginInfo(response, this.zapamtiMe);
+
               localStorage.setItem("loggedIn","true");
               localStorage.setItem("loggedOut","false");
               this.autentifikacijaHelper.loggedInEvent.emit(true);
@@ -51,28 +52,40 @@ export class LoginComponent implements OnInit {
                 this.loadKorisnik();
               }
               else {
-
                 this.router.navigate(['/']);
+                Swal.fire({
+                  title: "Uspješno ste se logirali!",
+                  icon: "success"
+                });
               }
 
             } else {
               AutentifikacijaHelper.setLoginInfo(null);
-              // @ts-ignore
-              porukaError("Pogrešno uneseni podaci za prijavu\", \"Neispravno korisničko ime ili  lozinka");
+              Swal.fire({
+                title: "Oops...",
+                text: "Pogrešno uneseni podaci za prijavu. Neispravno korisničko ime ili lozinka.",
+                icon: "error"
+              });
             }
           }
         );
     }
     else
-      // @ts-ignore
-      porukaError("Neadekvatno ispunjena forma za prijavu", "Molimo ispunite sva obavezna polja, pa ponovo pokušajte");
+      Swal.fire({
+        title: "Neadekvatno ispunjena forma za prijavu",
+        text: "Molimo ispunite sva obavezna polja, pa ponovo pokušajte.",
+        icon: "error"
+      });
+
   }
+
   loadKorisnik()
   {
     this.httpKlijent.get(MojConfig.adresa_servera+ `/Autentifikacija/Get`, MojConfig.http_opcije()).subscribe((x:any)=> {
       this.korisnikId=x.korisnickiNalogId??null;
     });
   }
+
   otkljucaj() {
     let url = MojConfig.adresa_servera + `/TwoFOtkljucaj/Otkljucaj`;
     this.httpKlijent.post(url, { Kljuc: this.kljuc }).subscribe(
@@ -81,7 +94,6 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/']);
       }
     );
-
   }
   //prikaziRegistraciju() {
    // this.router.navigate(['/registracija']);

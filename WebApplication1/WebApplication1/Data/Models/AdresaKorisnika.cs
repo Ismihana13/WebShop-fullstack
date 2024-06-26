@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WebApplication1.Data.Models
 {
@@ -16,6 +17,7 @@ namespace WebApplication1.Data.Models
         public int GradId { get; set; }
         public virtual Grad Grad { get; set; } = null!;
 
+        [JsonIgnore]
         public virtual ICollection<Korisnik> Korisnici { get; set; }
     }
 }

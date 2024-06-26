@@ -6,6 +6,7 @@ using Microsoft.Identity.Web;
 
 using Microsoft.Extensions.Configuration;
 using WebApplication1.Helper.Service;
+using WebApplication1.SignalR;
 
 
 var config = new ConfigurationBuilder()
@@ -32,6 +33,8 @@ builder.Services.AddTransient<MyAuthService>();
 builder.Services.AddTransient<MyActionLogService>();
 builder.Services.AddTransient<MyEmailSenderService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -58,5 +61,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapHub<SignalRHub>("/hub-putanja");
 app.Run();

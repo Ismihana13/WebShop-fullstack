@@ -7,7 +7,8 @@ import {KategorijaIdResponese} from "./kategorija-id-responese";
 import {KorpaProduktAllResponse} from "../korpa-produkt/korpa-produkt-all";
 import {AutentifikacijaHelper} from "../helper/autentifikacija-helper";
 import {LoginInformacije} from "../helper/login-informacije";
-
+import Swal from 'sweetalert2';
+import { Location } from '@angular/common';
 
 
 @Component({
@@ -56,27 +57,29 @@ export class DetaljiProizvodaComponent implements OnInit {
           }
         })
     }
+
     kategorijePoID(kategorijaID:number){
         const url = MojConfig.adresa_servera + `/Kategorija/PretraziKategorijuPoId?KategorijaId=${kategorijaID}`;
         return this.httpClient.get<KategorijaIdResponese>(url).subscribe((x) => {
            this.kategorije=x;
         });
-
     }
-    constructor(private route: ActivatedRoute, private httpClient: HttpClient) {
+    constructor(private route: ActivatedRoute, private httpClient: HttpClient,private location: Location) {
       this.loginInformacije = AutentifikacijaHelper.getLoginInfo();
     }
+
   loadKorisnik()
   {
     this.httpClient.get(MojConfig.adresa_servera+ `/Autentifikacija/Get`, MojConfig.http_opcije()).subscribe((x:any)=> {
       this.korisnikID=x.korisnickiNalogId??null;
     });
   }
-    ngOnInit(): void {
-        const productId = this.route.snapshot.params['productId'];
-        this.povrat(productId);
-        this.loadKorisnik();
-    }
+
+  ngOnInit(): void {
+    const productId = this.route.snapshot.params['productId'];
+    this.povrat(productId);
+    this.loadKorisnik();
+  }
 
   dodajUkorpu(produktId: string) {
     this.korpa = {
@@ -86,13 +89,22 @@ export class DetaljiProizvodaComponent implements OnInit {
 
     this.httpClient.post(MojConfig.adresa_servera + "/KorpaProdukt/Dodaj", this.korpa).subscribe((x: any) => {
       this.korpaProdukt = x;
-      // @ts-ignore
-      porukaSuccess("Uspjesno ste dodali produkt u korpu");
+      Swal.fire({
+        position: 'top-end',
+        icon: 'success',
+        title: 'Dodali ste proizvod u korpu!',
+        showConfirmButton: false,
+        timer: 1500
+      });
     });
     let url = MojConfig.adresa_servera + `/KorpaProdukt/GetSveKorpaProdukt`;
     this.httpClient.get<KorpaProduktAllResponse>(url).subscribe((x: KorpaProduktAllResponse) => {
       this.korpaProdukti = x;
     });
+  }
+
+  povratak() {
+    this.location.back();
   }
 }
 

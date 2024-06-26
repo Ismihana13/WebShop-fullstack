@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using WebApplication1.Data;
 
 
@@ -35,6 +36,27 @@ namespace WebApplication1.Endpoints.AdresaKorisnika
             {
                 AdresaKorisnikaId = noviObj.AdresaKorisnikaId
             };
+        }
+        [HttpGet("{korisnikId}")]
+        public async Task<ActionResult<AdresaKorisnikResponse>> GetAdresaKroisnikaID(int korisnikId)
+        {
+
+            // Pronalaženje korisnika u bazi podataka
+            var korisnik = await _applicationDbContext.Korisnik.Include(k => k.AdresaKorisnika)
+                                                    .FirstOrDefaultAsync(k => k.Id == korisnikId);
+
+            if (korisnik == null)
+            {
+                return NotFound(); // Ako korisnik nije pronađen, vraćamo NotFound rezultat
+            }
+
+            // Provjera postoji li adresa korisnika
+            if (korisnik.AdresaKorisnika == null)
+            {
+                return NotFound("Adresa nije pronađena za ovog korisnika.");
+            }
+
+            return Ok(korisnik.AdresaKorisnika);
         }
         [HttpGet]
         public async Task<ActionResult<List<AdreseResponse>>> GetAdreseKorisnika()
