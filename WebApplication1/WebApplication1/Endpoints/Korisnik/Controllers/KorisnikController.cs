@@ -1,10 +1,12 @@
-
+﻿
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.Data.Models;
 using WebApplication1.Endpoints.Korisnik.Controllers;
 using WebApplication1.Helper.AutentifikacijaAutorizacija;
+using WebApplication1.SignalR;
 using WebApplication5.KorisnikModul.ViewModels;
 
 
@@ -15,9 +17,11 @@ namespace WebApplication5.KorisnikModul.Controllers
   public class KorisnikController:ControllerBase
   {
     private ApplicationDbContext _dbContext;
-    public KorisnikController(ApplicationDbContext dbContext)
+    private readonly IHubContext<SignalRHub> _hubContext;
+    public KorisnikController(ApplicationDbContext dbContext, IHubContext<SignalRHub> hubContext)
     {
       _dbContext = dbContext;
+      _hubContext = hubContext;
     }
     [HttpPost]
     public ActionResult Add([FromBody]RegistracijaVM registracijaVM)
@@ -61,36 +65,7 @@ namespace WebApplication5.KorisnikModul.Controllers
 
         //    }
 
-        //[HttpGet]
-        //public ActionResult Delete()
-        //{
-        //    if (!HttpContext.GetLoginInfo().isPermsijaKorisnik)
-        //        return BadRequest("nije logiran");
-
-        //    Korisnik korisnik = HttpContext.GetLoginInfo().korisnickiNalog.Korisnik;
-        //    List<OnlineNarudzba> trenutneNarudzbe = _dbContext.OnlineNarudzba.Where(n => n.KorisnikID == korisnik.Id && n.StatusNarudzbeID != 1 && n.Zakljucena).ToList();
-        //    if (trenutneNarudzbe != null && trenutneNarudzbe?.Count != 0)
-        //        return BadRequest("Trenutno ne mozete deaktivirati profil jer su Vase narudzbe u izradi");
-
-        //    List<OnlineNarudzba> narudzbe = _dbContext.OnlineNarudzba.Where(n => n.KorisnikID == korisnik.Id).ToList();
-        //    List<NarudzbaStavka> stavkeNarudzbi = new List<NarudzbaStavka>();
-        //    foreach (OnlineNarudzba narudzba in narudzbe)
-        //    {
-        //        stavkeNarudzbi.AddRange(_dbContext.NarudzbaStavka.Where(sn => sn.OnlineNarudzbaId == narudzba.ID).ToList());
-        //    }
-        //    //List<Rezervacija> rezervacije = _dbContext.Rezervacija.Where(r => r.KorisnikId == korisnik.Id).ToList();
-        //    List<AutentifikacijaToken> logovi = _dbContext.AutentifikacijaToken.Where(at => at.KorisnickiNalogId == korisnik.Id).ToList();
-
-        //    _dbContext.NarudzbaStavka.RemoveRange(stavkeNarudzbi);
-        //    _dbContext.OnlineNarudzba.RemoveRange(narudzbe);
-        //    //_dbContext.Rezervacija.RemoveRange(rezervacije);
-        //    _dbContext.AutentifikacijaToken.RemoveRange(logovi);
-        //    _dbContext.Korisnik.Remove(korisnik);
-        //    _dbContext.KorisnickiNalog.Remove(korisnik);
-        //    _dbContext.SaveChanges();
-
-        //    return Ok();
-        //}
+       
         [HttpGet]
         public List<Korisnik> GetAll()
         {
@@ -145,5 +120,62 @@ namespace WebApplication5.KorisnikModul.Controllers
             _dbContext.SaveChanges();
             return Ok(korisnik);
         }
+        public class KorisnikUpdateDto
+        {
+            public int Id { get; set; }
+            public string Ime { get; set; }
+            public string Prezime { get; set; }
+            public string KorisnickoIme { get; set; }
+            public string Email { get; set; }
+            public string BrojTelefona { get; set; }
+            public string NazivUlice { get; set; }
+            public string Slika { get; set; }
+            public int GradId { get; set; }
+            public string Lozinka { get; set; }
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateKorisnik(int id, [FromBody] KorisnikUpdateDto korisnikDto, CancellationToken cancellationToken)
+        {
+            if (id != korisnikDto.Id)
+            {
+                return BadRequest();
+            }
+
+            var korisnik = await _dbContext.Korisnik
+                .Include(k => k.AdresaKorisnika)
+                .FirstOrDefaultAsync(k => k.Id == id);
+
+            if (korisnik == null)
+            {
+                return NotFound();
+            }
+
+            // Ažuriranje korisničkih podataka
+            korisnik.Ime = korisnikDto.Ime;
+            korisnik.Prezime = korisnikDto.Prezime;
+            korisnik.KorisnickoIme = korisnikDto.KorisnickoIme;
+            korisnik.Email = korisnikDto.Email;
+            korisnik.BrojTelefona = korisnikDto.BrojTelefona;
+            korisnik.Slika = korisnikDto.Slika;
+            // Ažuriranje adrese korisnika
+            if (korisnik.AdresaKorisnika == null)
+            {
+                korisnik.AdresaKorisnika = new AdresaKorisnika();
+            }
+
+            korisnik.AdresaKorisnika.NazivUlice = korisnikDto.NazivUlice;
+            korisnik.AdresaKorisnika.GradId = korisnikDto.GradId;
+            if (!string.IsNullOrEmpty(korisnikDto.Lozinka))
+            {
+                korisnik.Lozinka = korisnikDto.Lozinka;
+            }
+            _dbContext.Entry(korisnik).State = EntityState.Modified;
+            await _hubContext.Clients.Groups("admin").SendAsync("prijem_poruke_js",  korisnik.Id + " ID, korisnik je promjenio svoje podatke.",
+                 cancellationToken: cancellationToken);
+
+             await _dbContext.SaveChangesAsync();
+            return NoContent();
+        }
     }
+
 }

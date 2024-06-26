@@ -17,6 +17,7 @@ import {AutorizacijaLoginProvjera} from "./guards/autorizacija-login-provjera.se
 import {AutentifikacijaHelper} from "./helper/autentifikacija-helper";
 import {AuthInterceptor} from "./helper/auth/auth-interceptor.service";
 import { KorisnickiNalogComponent } from './korisnicki-nalog/korisnicki-nalog.component';
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 
 
@@ -36,7 +37,7 @@ import { KorisnickiNalogComponent } from './korisnicki-nalog/korisnicki-nalog.co
 
 
   ],
-  imports: [BrowserModule, AppRoutingModule, HttpClientModule, FormsModule],
+  imports: [BrowserModule, AppRoutingModule, HttpClientModule, FormsModule, MatSnackBarModule],
   providers: [
     AutorizacijaLoginProvjera,
     AutentifikacijaHelper,

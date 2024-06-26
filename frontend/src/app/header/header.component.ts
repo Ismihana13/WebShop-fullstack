@@ -1,11 +1,10 @@
-
 import { MojConfig } from '../moj-config';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AutentifikacijaHelper } from '../helper/autentifikacija-helper';
 import { Component, OnInit} from "@angular/core";
-import {KorisnickiNalog} from "../helper/korisnicki-nalog";
-import {KorisnickiNalogComponent} from "../korisnicki-nalog/korisnicki-nalog.component";
+import {SignalRService} from "../services/signalR.service";
+import Swal from 'sweetalert2';
 
 
 
@@ -76,24 +75,27 @@ export class HeaderComponent implements OnInit {
   odjaviSe() {
     let token = window.localStorage.getItem('my-auth-token') ?? '';
     window.localStorage.setItem('my-auth-token', '');
+    let url=MojConfig.adresa_servera + '/Autentifikacija/Logout/';
     this.httpClient
-      .post(
-        MojConfig.adresa_servera + '/Autentifikacija/Logout/',
-        token,
-        MojConfig.http_opcije()
-      )
+      .post(url,{
+        signalRConnectionId:SignalRService.ConnectionID
+      },{
+        headers:{
+          "my-auth-token":token
+        }
+      })
+      //MojConfig.http_opcije()
       .subscribe(() => {
         localStorage.setItem('loggedOut', 'true');
         localStorage.setItem('loggedIn', 'false');
         localStorage.setItem('autentifikacija-token', '');
         this.loggedIn = false;
-        // @ts-ignore
-        porukaSuccess("Uspjesno ste se odjavili");
-        this.router.navigate(["/login"]);
-      });
-  }
+        Swal.fire({
+          title: "Uspješno ste se odjavili",
+          icon: "success"
+        })
+          this.router.navigate(["/login"]);
 
-  idi() {
-    this.router.navigate(['/korisnicki-nalog']);
+      });
   }
 }
